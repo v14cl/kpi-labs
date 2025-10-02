@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+
+actor "Reader" as Reader
+actor "Librarian" as Librarian
+
+Reader --> (View book catalog)
+Reader --> (Search book by genre/title/author)
+Reader --> (Take a book)
+Reader --> (Return a book)
+Reader --> (View checkout history)
+
+(View book catalog) <|-- (Search book by genre/title/author) : extends
+(Take a book) ..> (Check book availability) : uses
+(Take a book) ..> (Check book quantity restrictions) : uses
+(Take a book) ..> (Update checkout history) : uses
+(Return a book) ..> (Update checkout history) : uses
+
+(View checkout history) <|-- (Filter by client/time) : extends
+
+
+Librarian --> (Add a book)
+Librarian --> (Update or delete book information)
+Librarian --> (Register a new reader)
+Librarian --> (View checkout history)
+
+(Add a book) ..> (Check uniqueness of book) : uses
+(Add a book) <|-- (Check uniqueness) : extends
+(Register a new reader) <|-- (Check uniqueness) : extends
+
+@enduml
