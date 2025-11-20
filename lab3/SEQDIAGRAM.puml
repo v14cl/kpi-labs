@@ -1,0 +1,95 @@
+@startuml
+actor Client
+actor Librarian
+
+participant "Frontend UI" as UI
+participant "BookController" as Controller
+participant "BookService" as Service
+participant "BookRepository" as Repository
+database "Database" as DB
+
+
+Client -> UI: Open website
+UI -> Controller: GET /books
+Controller -> Service: getAllBooks()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM books
+DB --> Repository: return List<Book>
+Repository --> Service: return List<Book>
+Service --> Controller: return List<Book>
+Controller --> UI: return List<Book>
+UI --> Client: Show catalog
+
+loop searching for book
+    Client -> UI: Enter search query
+    UI -> Controller: GET /books?search=query
+    Controller -> Service: searchBooks(query)
+    Service -> Repository: search(query)
+    Repository -> DB: SELECT ... WHERE title LIKE ...
+    DB --> Repository: return List<Book>
+    Repository --> Service: return List<Book>
+    Service --> Controller: return List<Book>
+    Controller --> UI: return List<Book>
+    UI --> Client: Show search results
+
+    Client -> UI: Apply filters
+    UI -> Controller: GET /books?filters
+    Controller -> Service: filterBooks(filters)
+    Service -> Repository: filter(filters)
+    Repository -> DB: SELECT ... WHERE ...
+    DB --> Repository: return List<Book>
+    Repository --> Service: return List<Book>
+    Service --> Controller: return List<Book>
+    Controller --> UI: return List<Book>
+    UI --> Client: Update filtered results
+
+    Client -> UI: View book details
+    UI -> Controller: GET /books/{id}
+    Controller -> Service: getBookDetails(id)
+    Service -> Repository: findById(id)
+    Repository -> DB: SELECT * FROM books WHERE id = ...
+    DB --> Repository: return Book
+    Repository --> Service: return Book
+    Service --> Controller: return Book
+    Controller --> UI: return Book
+    UI --> Client: Show book details
+end
+
+alt Book is available
+    Client -> UI: Add book to cart
+else Book unavailable
+    UI --> Client: Notify about unavailability
+    UI -> Controller: POST /waiting-list
+    Controller -> Service: addToWaitingList(Client, book)
+    Service -> Repository: saveWaitingRequest()
+    Repository -> DB: INSERT waiting_list ...
+    DB --> Repository: return success
+    Repository --> Service: return success
+    Service --> Controller: return success
+    Controller --> UI: return success
+
+    Client -> UI: Check order status
+    UI -> Controller: GET /status
+    Controller -> Service: checkStatus()
+    Service -> Repository: findStatus()
+    Repository -> DB: SELECT status FROM waiting_list...
+    DB --> Repository: return Status
+    Repository --> Service: return Status
+    Service --> Controller: return Status
+    Controller --> UI: return "Book is ready"
+    UI --> Client: Book ready notification
+end
+
+Client -> UI: Place order
+UI -> Controller: POST /orders
+Controller -> Service: placeOrder()
+Service -> Repository: saveOrder()
+Repository -> DB: INSERT order
+DB --> Repository: return Order
+Repository --> Service: return Order
+Service --> Controller: return Order
+Controller --> UI: return Order
+UI --> Client: Notify order placed
+
+UI -> Librarian: Notify about new order
+@enduml
