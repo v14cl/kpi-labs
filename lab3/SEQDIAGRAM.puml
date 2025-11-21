@@ -1,95 +1,79 @@
 @startuml
 actor Client
-actor Librarian
-
 participant "Frontend UI" as UI
 participant "BookController" as Controller
 participant "BookService" as Service
 participant "BookRepository" as Repository
 database "Database" as DB
 
-
-Client -> UI: Open website
-UI -> Controller: GET /books
-Controller -> Service: getAllBooks()
-Service -> Repository: findAll()
-Repository -> DB: SELECT * FROM books
-DB --> Repository: return List<Book>
-Repository --> Service: return List<Book>
-Service --> Controller: return List<Book>
-Controller --> UI: return List<Book>
-UI --> Client: Show catalog
-
 loop searching for book
     Client -> UI: Enter search query
+    activate UI
     UI -> Controller: GET /books?search=query
+    activate Controller
     Controller -> Service: searchBooks(query)
+    activate Service
     Service -> Repository: search(query)
+    activate Repository
     Repository -> DB: SELECT ... WHERE title LIKE ...
+    activate DB
     DB --> Repository: return List<Book>
+    deactivate DB
     Repository --> Service: return List<Book>
+    deactivate Repository
     Service --> Controller: return List<Book>
+    deactivate Service
     Controller --> UI: return List<Book>
-    UI --> Client: Show search results
-
-    Client -> UI: Apply filters
-    UI -> Controller: GET /books?filters
-    Controller -> Service: filterBooks(filters)
-    Service -> Repository: filter(filters)
-    Repository -> DB: SELECT ... WHERE ...
-    DB --> Repository: return List<Book>
-    Repository --> Service: return List<Book>
-    Service --> Controller: return List<Book>
-    Controller --> UI: return List<Book>
-    UI --> Client: Update filtered results
-
-    Client -> UI: View book details
-    UI -> Controller: GET /books/{id}
-    Controller -> Service: getBookDetails(id)
-    Service -> Repository: findById(id)
-    Repository -> DB: SELECT * FROM books WHERE id = ...
-    DB --> Repository: return Book
-    Repository --> Service: return Book
-    Service --> Controller: return Book
-    Controller --> UI: return Book
-    UI --> Client: Show book details
+    deactivate Controller
+    UI --> Client: Show book/book details
+    deactivate UI
 end
 
 alt Book is available
     Client -> UI: Add book to cart
-else Book unavailable
-    UI --> Client: Notify about unavailability
-    UI -> Controller: POST /waiting-list
-    Controller -> Service: addToWaitingList(Client, book)
-    Service -> Repository: saveWaitingRequest()
-    Repository -> DB: INSERT waiting_list ...
+    activate UI
+    UI -> Controller: POST /cart
+    activate Controller
+    Controller -> Service: addToCart(book, client)
+    activate Service
+    Service -> Repository: saveToCart()
+    activate Repository
+    Repository -> DB: INSERT INTO cart ...
+    activate DB
     DB --> Repository: return success
+    deactivate DB
     Repository --> Service: return success
+    deactivate Repository
     Service --> Controller: return success
+    deactivate Service
     Controller --> UI: return success
+    deactivate Controller
 
-    Client -> UI: Check order status
-    UI -> Controller: GET /status
-    Controller -> Service: checkStatus()
-    Service -> Repository: findStatus()
-    Repository -> DB: SELECT status FROM waiting_list...
-    DB --> Repository: return Status
-    Repository --> Service: return Status
-    Service --> Controller: return Status
-    Controller --> UI: return "Book is ready"
-    UI --> Client: Book ready notification
+    UI --> Client: ShowCart()
+    deactivate UI
+
+else Book unavailable
+    Client -> UI: Add book to cart
+    activate UI
+    UI --> Client: Show "Book is unavailable"
+    UI -> Controller: POST /waiting-list
+    activate Controller
+    Controller -> Service: addToWaitingList(client, book)
+    activate Service
+    Service -> Repository: saveWaitingRequest()
+    activate Repository
+    Repository -> DB: INSERT INTO waiting_list ...
+    activate DB
+    DB --> Repository: return success
+    deactivate DB
+    Repository --> Service: return success
+    deactivate Repository
+    Service --> Controller: return success
+    deactivate Service
+    Controller --> UI: return success
+    deactivate Controller
+
+    UI --> Client: Show "Book added to waiting list"
+    deactivate UI
 end
-
-Client -> UI: Place order
-UI -> Controller: POST /orders
-Controller -> Service: placeOrder()
-Service -> Repository: saveOrder()
-Repository -> DB: INSERT order
-DB --> Repository: return Order
-Repository --> Service: return Order
-Service --> Controller: return Order
-Controller --> UI: return Order
-UI --> Client: Notify order placed
-
-UI -> Librarian: Notify about new order
 @enduml
